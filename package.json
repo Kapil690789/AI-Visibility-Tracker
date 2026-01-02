@@ -4,11 +4,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
-    "lint": "eslint .",
-    "start": "next start"
-  },
+  "build": "prisma generate && next build",  
+  "dev": "next dev",
+  "lint": "eslint .",
+  "start": "next start"
+},
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
