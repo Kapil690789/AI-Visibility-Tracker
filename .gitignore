@@ -8,8 +8,7 @@
 /build
 /dist
 
-# 3. Environment Variables (SECURITY - DO NOT REMOVE)
-# Isse aapki Gemini aur Supabase keys leak hone se bachengi
+
 .env
 .env.local
 .env.development.local
@@ -18,14 +17,13 @@
 *.env.bak
 
 # 4. Prisma
-# SQLite database files (agar local use kar rahe ho)
+
 /prisma/*.db
 /prisma/*.db-journal
 # Migration logs
 /prisma/migrations/migration_lock.toml
 
 # 5. Playwright (Bonus Script Results)
-# Screenshots, videos aur trace files jo testing ke waqt banti hain
 /test-results/
 /playwright-report/
 /blob-report/
@@ -52,9 +50,5 @@ Thumbs.db
 
 # 8. TypeScript
 *.tsbuildinfo
-# Note: Kuch teams next-env.d.ts ko commit karti hain, 
-# par production standard ke liye ise ignore karna safe hai.
 next-env.d.ts
 
-# 9. Vercel
-.vercel

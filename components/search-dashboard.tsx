@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { X, Plus, Zap } from "lucide-react"
+import { X, Plus, Zap, BookOpen } from "lucide-react"
 
 interface SearchDashboardProps {
   onSearch: (category: string, brands: string[]) => Promise<void>
@@ -16,6 +16,7 @@ export default function SearchDashboard({ onSearch, isLoading }: SearchDashboard
   const [category, setCategory] = useState("")
   const [brandInput, setBrandInput] = useState("")
   const [brands, setBrands] = useState<string[]>([])
+  const [showMethodology, setShowMethodology] = useState(false)
 
   const addBrand = () => {
     if (brandInput.trim() && !brands.includes(brandInput.trim())) {
@@ -123,18 +124,59 @@ export default function SearchDashboard({ onSearch, isLoading }: SearchDashboard
         </div>
       </Card>
 
-      {/* Info Box */}
+      {/* Info Box with Methodology Toggle */}
       <Card className="p-6 bg-accent/5 border-accent/20">
-        <div className="space-y-3">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <span className="text-xl">⚡</span> How it Works
-          </h3>
-          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-            <li>We generate 5 diverse prompts for your category</li>
-            <li>Query Google Gemini AI with each unique prompt</li>
-            <li>Extract and analyze brand mentions from responses</li>
-            <li>Calculate visibility scores and citation distribution</li>
-          </ol>
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3 flex-1">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span className="text-xl">⚡</span> How it Works
+              </h3>
+              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                <li>We generate 5 diverse prompts for your category</li>
+                <li>Query Google Gemini AI with each unique prompt</li>
+                <li>Extract and analyze brand mentions from responses</li>
+                <li>Calculate visibility scores and citation distribution</li>
+              </ol>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMethodology(!showMethodology)}
+              className="gap-2 whitespace-nowrap"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">Methodology</span>
+              <span className="sm:hidden">Info</span>
+            </Button>
+          </div>
+
+          {/* Methodology Details */}
+          {showMethodology && (
+            <div className="pt-4 border-t border-accent/30 space-y-3">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Measurement Methodology</h4>
+                <p className="text-xs text-muted-foreground">
+                  Our analysis tracks how frequently your brand appears in AI-generated responses. This metric is
+                  crucial for understanding your brand's visibility in the era of AI-driven content discovery.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Key Metrics</h4>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>
+                    <strong>Visibility Score:</strong> Percentage of brands mentioned across all prompts
+                  </li>
+                  <li>
+                    <strong>Citation Share:</strong> Relative mention frequency vs competitors
+                  </li>
+                  <li>
+                    <strong>Prompt Coverage:</strong> How many AI responses mentioned your brand
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>

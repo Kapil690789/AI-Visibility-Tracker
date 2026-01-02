@@ -3,13 +3,38 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { Eye, TrendingUp, Share2, Award } from "lucide-react"
+import { Eye, TrendingUp, Share2, Award, AlertCircle, CheckCircle, Download } from "lucide-react"
 
 interface AnalyticsDashboardProps {
   report: any
 }
 
 export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) {
+  const handleExportPDF = async () => {
+    try {
+      const response = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(report),
+      })
+
+      if (!response.ok) throw new Error("Export failed")
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `report-${report.category.replace(/\s+/g, "-")}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("PDF export error:", error)
+      alert("Failed to export PDF. Please try again.")
+    }
+  }
+
   if (!report) return null
 
   // Calculate metrics
@@ -38,11 +63,88 @@ export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) 
 
   const brandColors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
 
+  const getInsights = () => {
+    const insights = []
+    const topBrand = leaderboardData[0]
+    const yourBrands = report.brands || []
+
+    if (topBrand) {
+      insights.push({
+        icon: TrendingUp,
+        title: "Market Leader",
+        description: `${topBrand.brand} dominates with ${topBrand.visibility}% visibility`,
+        color: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300",
+        type: "success",
+      })
+    }
+
+    const mentionedBrands = Object.keys(brandMentions)
+    const unmentionedCount = yourBrands.length - mentionedBrands.length
+
+    if (unmentionedCount > 0) {
+      insights.push({
+        icon: AlertCircle,
+        title: "Content Gap",
+        description: `${unmentionedCount} brand(s) need visibility improvement in AI responses`,
+        color: "bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300",
+        type: "warning",
+      })
+    }
+
+    if (leaderboardData.length > 0) {
+      const avgVisibility = leaderboardData.reduce((a, b) => a + b.visibility, 0) / leaderboardData.length
+      insights.push({
+        icon: CheckCircle,
+        title: "Market Saturation",
+        description: `Average visibility: ${Math.round(avgVisibility)}% across all tracked brands`,
+        color: "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300",
+        type: "info",
+      })
+    }
+
+    return insights
+  }
+
+  const insights = getInsights()
+
   return (
     <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics Report</h1>
+          <p className="text-muted-foreground mt-1">{report.category}</p>
+        </div>
+        <button
+          onClick={handleExportPDF}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export as PDF
+        </button>
+      </div>
+
+      {/* AI Insights section */}
+      {insights.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {insights.map((insight, idx) => {
+            const Icon = insight.icon
+            return (
+              <div key={idx} className={`p-4 rounded-lg border border-border/50 ${insight.color}`}>
+                <div className="flex items-start gap-3">
+                  <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">{insight.title}</p>
+                    <p className="text-xs mt-1 opacity-90">{insight.description}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Visibility Score */}
         <Card className="p-6 bg-gradient-to-br from-blue-50 dark:from-blue-950/30 border-blue-200 dark:border-blue-800">
           <div className="flex items-start justify-between">
             <div>
@@ -58,7 +160,6 @@ export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) 
           </div>
         </Card>
 
-        {/* Prompts Tracked */}
         <Card className="p-6 bg-gradient-to-br from-purple-50 dark:from-purple-950/30 border-purple-200 dark:border-purple-800">
           <div className="flex items-start justify-between">
             <div>
@@ -72,7 +173,6 @@ export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) 
           </div>
         </Card>
 
-        {/* Brands Competing */}
         <Card className="p-6 bg-gradient-to-br from-emerald-50 dark:from-emerald-950/30 border-emerald-200 dark:border-emerald-800">
           <div className="flex items-start justify-between">
             <div>
@@ -125,7 +225,6 @@ export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) 
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart */}
         {leaderboardData.length > 0 && (
           <Card className="p-6 border-border/50">
             <h3 className="font-semibold text-lg mb-4">Brand Mentions Distribution</h3>
@@ -141,7 +240,6 @@ export default function AnalyticsDashboard({ report }: AnalyticsDashboardProps) 
           </Card>
         )}
 
-        {/* Pie Chart */}
         {leaderboardData.length > 0 && (
           <Card className="p-6 border-border/50">
             <h3 className="font-semibold text-lg mb-4">Citation Share Distribution</h3>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import SearchDashboard from "@/components/search-dashboard"
 import AnalyticsDashboard from "@/components/analytics-dashboard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sparkles, BarChart3, Search } from "lucide-react"
+import { Sparkles, BarChart3, Search, Download } from "lucide-react"
 
 export default function Home() {
   const [reports, setReports] = useState<any[]>([])
@@ -57,18 +57,71 @@ export default function Home() {
     setActiveTab("analytics")
   }
 
+  const handleExportPDF = async () => {
+    if (!selectedReport) return
+    try {
+      const response = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectedReport),
+      })
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `report-${selectedReport.category.replace(/\s+/g, "-")}.pdf`
+      a.click()
+    } catch (error) {
+      alert("Failed to export PDF")
+    }
+  }
+
+  const handleExportCSV = () => {
+    if (!selectedReport) return
+    const csv = generateCSVContent(selectedReport)
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `report-${selectedReport.category.replace(/\s+/g, "-")}.csv`
+    a.click()
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
       {/* Header Section */}
       <div className="border-b border-border/50 bg-gradient-to-b from-card to-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              <Sparkles className="w-6 h-6" />
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                  AI Visibility Tracker
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">Enterprise-Grade AI Monitoring</p>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-              AI Visibility Tracker
-            </h1>
+            {selectedReport && activeTab === "analytics" && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportPDF}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border/50 bg-card hover:bg-card/80 transition-colors text-sm font-medium"
+                >
+                  <Download className="w-4 h-4" />
+                  PDF
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border/50 bg-card hover:bg-card/80 transition-colors text-sm font-medium"
+                >
+                  <Download className="w-4 h-4" />
+                  CSV
+                </button>
+              </div>
+            )}
           </div>
           <p className="text-muted-foreground">
             Discover how often your brand appears in AI-generated responses across multiple models
@@ -146,4 +199,28 @@ export default function Home() {
       </div>
     </main>
   )
+}
+
+function generateCSVContent(report: any): string {
+  let csv = "AI Visibility Tracker Report\n"
+  csv += `Category,${report.category}\n`
+  csv += `Date,${new Date(report.createdAt).toLocaleDateString()}\n`
+  csv += `Visibility Score,${report.visibilityScore?.toFixed(1) || 0}%\n\n`
+
+  csv += "Brand,Mentions,Visibility %\n"
+  const brandMentions: Record<string, number> = {}
+  report.results?.forEach((result: any) => {
+    result.mentions?.forEach((mention: any) => {
+      brandMentions[mention.brand] = (brandMentions[mention.brand] || 0) + 1
+    })
+  })
+
+  Object.entries(brandMentions)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .forEach(([brand, count]) => {
+      const visibility = Math.round(((count as number) / (report.results?.length || 1)) * 100)
+      csv += `${brand},${count},${visibility}%\n`
+    })
+
+  return csv
 }
